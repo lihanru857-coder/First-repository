@@ -2,193 +2,886 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>冬日来信</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>俄罗斯方块 · WPS表格版</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; overflow: hidden; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
   body {
-    font-family: "Songti SC", "SimSun", "Noto Serif SC", serif;
-    background: linear-gradient(160deg, #0f1b2d 0%, #1c3350 45%, #2b4a6f 100%);
-    color: #f5efe6;
-    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    display: flex;
+    padding: 16px;
+    background: radial-gradient(circle at 50% 0%, #eef2f6, #d6dce5);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============ 窗口外壳 ============ */
+  .app {
+    margin: auto;
+    background: #fff;
+    border: 1px solid #c8ced6;
+    border-radius: 8px;
+    box-shadow: 0 18px 50px rgba(20,30,45,.22), 0 2px 6px rgba(20,30,45,.08);
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ---------- 标题栏 ---------- */
+  .titlebar {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px 0 10px;
+    background: linear-gradient(#ffffff, #f1f3f6);
+    border-bottom: 1px solid #e0e3e8;
+    font-size: 12px;
+    color: #4a5260;
+  }
+  .titlebar .left { display: flex; align-items: center; gap: 8px; }
+  .logo {
+    width: 18px; height: 18px; border-radius: 3px;
+    background: linear-gradient(135deg, #24c46a, #12803f);
+    color: #fff; font-size: 11px; font-weight: 700;
+    display: grid; place-items: center;
+    box-shadow: 0 1px 2px rgba(18,128,63,.4);
+  }
+  .win-btns { display: flex; }
+  .win-btns span {
+    width: 30px; height: 24px; display: grid; place-items: center;
+    font-size: 11px; color: #7a8290; border-radius: 3px;
+  }
+  .win-btns span:last-child:hover { background: #e81123; color: #fff; }
+  .win-btns span:not(:last-child):hover { background: #e6e9ee; }
+
+  /* ---------- 选项卡 ---------- */
+  .tabs {
+    display: flex; align-items: flex-end; gap: 1px;
+    height: 30px; padding: 0 8px;
+    background: #f4f6f8;
+    border-bottom: 1px solid #e0e3e8;
+  }
+  .tab {
+    height: 26px; padding: 0 15px;
+    display: flex; align-items: center;
+    font-size: 12px; color: #5b6371;
+    border-radius: 3px 3px 0 0;
+    cursor: default;
+  }
+  .tab:hover { background: #e8ebf0; }
+  .tab.active {
+    background: #fff;
+    color: #15803d;
+    font-weight: 600;
+    box-shadow: inset 0 2px 0 #22a05a;
+  }
+
+  /* ---------- 功能区 ---------- */
+  .ribbon {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    background: #fff;
+    border-bottom: 1px solid #e6e9ee;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 30px; padding: 0 13px;
+    font-family: inherit; font-size: 12.5px;
+    color: #333c4a;
+    background: linear-gradient(#ffffff, #f3f5f8);
+    border: 1px solid #d2d7de;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .btn:hover { background: #eef8f1; border-color: #a5d9b8; color: #15803d; }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary {
+    background: linear-gradient(#2fc76f, #17a04e);
+    border-color: #12863f;
+    color: #fff; font-weight: 600;
+    box-shadow: 0 1px 3px rgba(20,140,70,.35);
+  }
+  .btn.primary:hover { background: linear-gradient(#3ed67c, #1aa955); color:#fff; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  .sep { width: 1px; height: 20px; background: #e2e6eb; }
+  .hint { margin-left: auto; font-size: 11.5px; color: #a0a7b2; letter-spacing: .2px; }
+
+  /* ---------- 编辑栏 ---------- */
+  .formula-bar {
+    display: flex; align-items: center;
+    height: 28px;
+    background: #fff;
+    border-bottom: 1px solid #e3e6ea;
+    font-size: 12px;
+  }
+  .name-box {
+    width: 88px; height: 100%; padding: 0 8px;
+    display: flex; align-items: center;
+    border-right: 1px solid #e3e6ea;
+    font-family: Consolas, "Courier New", monospace;
+    color: #333c4a;
+  }
+  .fx {
+    height: 100%; padding: 0 10px;
+    display: flex; align-items: center;
+    border-right: 1px solid #e3e6ea;
+    font-family: Georgia, serif; font-style: italic;
+    color: #8b93a1;
+  }
+  .formula {
+    flex: 1; padding: 0 10px;
+    font-family: Consolas, "Courier New", monospace;
+    color: #5b6371;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* ---------- 主体 ---------- */
+  .body {
+    display: flex; gap: 12px;
+    padding: 12px;
+    background: #f7f8fa;
+  }
+
+  /* 表格 */
+  .sheet {
     position: relative;
+    display: grid;
+    border: 1px solid #c9cfd7;
+    border-radius: 2px;
+    background: #fff;
+    overflow: hidden;
   }
-
-  /* 雪花 */
-  .snow {
-    position: fixed; top: -10px; color: #fff; opacity: .75;
-    pointer-events: none; user-select: none; z-index: 1;
-    animation: fall linear infinite;
+  .corner {
+    background: #f0f2f5;
+    border-right: 1px solid #d8dce2;
+    border-bottom: 1px solid #d8dce2;
   }
-  @keyframes fall {
-    to { transform: translateY(110vh) rotate(360deg); }
+  .col-heads {
+    display: flex;
+    background: #f0f2f5;
+    border-bottom: 1px solid #d8dce2;
   }
-
-  /* 主容器 */
-  .stage {
-    position: relative; z-index: 2;
-    width: min(92vw, 420px);
-    height: min(86vh, 640px);
+  .col-heads div {
+    flex: none;
+    display: grid; place-items: center;
+    font-size: 11px; color: #737c8a;
+    border-right: 1px solid #e3e6ea;
+  }
+  .row-heads {
+    display: flex; flex-direction: column;
+    background: #f0f2f5;
+    border-right: 1px solid #d8dce2;
+  }
+  .row-heads div {
+    flex: none;
     display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #737c8a;
+    border-bottom: 1px solid #e3e6ea;
   }
+  .grid { display: grid; background: #fff; }
+  .cell {
+    border-right: 1px solid #e8eaed;
+    border-bottom: 1px solid #e8eaed;
+    background: #fff;
+  }
+  .cell.clearing { background: #ffe066 !important; }
 
-  /* 信封 */
-  .envelope {
+  .overlay {
     position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    transition: opacity .7s ease, transform .7s ease;
+    display: none; place-items: center;
+    background: rgba(255,255,255,.86);
+    backdrop-filter: blur(1px);
+    text-align: center;
   }
-  .envelope.hide {
-    opacity: 0; transform: translateY(-40px) scale(.96);
-    pointer-events: none;
-  }
-  .envelope .icon {
-    font-size: 92px; line-height: 1;
-    filter: drop-shadow(0 12px 24px rgba(0,0,0,.35));
-    animation: float 3.5s ease-in-out infinite;
-  }
-  @keyframes float {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-  }
-  .envelope h1 {
-    margin-top: 22px; font-size: 22px; letter-spacing: 6px;
-    font-weight: 500; color: #f7e7c6;
-  }
-  .envelope p {
-    margin-top: 10px; font-size: 13px; letter-spacing: 2px;
-    color: rgba(245,239,230,.55);
-  }
-  .open-btn {
-    margin-top: 34px; padding: 12px 34px;
-    border: 1px solid rgba(247,231,198,.6);
-    border-radius: 999px; background: transparent;
-    color: #f7e7c6; font-size: 15px; letter-spacing: 3px;
-    font-family: inherit; cursor: pointer;
-    transition: all .3s ease;
-  }
-  .open-btn:active { background: rgba(247,231,198,.15); transform: scale(.97); }
-
-  /* 信纸 */
-  .letter {
-    position: absolute; inset: 0;
-    padding: 34px 28px 26px;
-    border-radius: 14px;
-    background: linear-gradient(180deg, #fbf6ec 0%, #f2e8d5 100%);
-    color: #3a2f24;
-    box-shadow: 0 24px 60px rgba(0,0,0,.45);
-    opacity: 0; transform: translateY(28px) scale(.97);
-    transition: opacity .8s ease, transform .8s ease;
-    pointer-events: none;
-    display: flex; flex-direction: column;
-    overflow-y: auto;
-  }
-  .letter.show {
-    opacity: 1; transform: translateY(0) scale(1);
-    pointer-events: auto;
-  }
-  .letter .top-line {
-    text-align: center; color: #b08d57; font-size: 13px;
-    letter-spacing: 4px; margin-bottom: 18px;
-  }
-  .letter h2 {
-    text-align: center; font-size: 20px; letter-spacing: 5px;
-    font-weight: 600; margin-bottom: 22px; color: #4a3826;
-  }
-  .letter p {
-    font-size: 15px; line-height: 2; letter-spacing: 1px;
-    margin-bottom: 14px;
-    opacity: 0; transform: translateY(12px);
-    transition: opacity .8s ease, transform .8s ease;
-  }
-  .letter p.in { opacity: 1; transform: translateY(0); }
-  .letter .sign {
-    margin-top: auto; padding-top: 18px;
-    text-align: right; font-size: 13px; color: #8b6f4c;
+  .overlay.show { display: grid; }
+  .overlay-title {
+    font-size: 20px; font-weight: 700; color: #17a04e;
     letter-spacing: 2px;
-    opacity: 0; transition: opacity .8s ease;
   }
-  .letter .sign.in { opacity: 1; }
+  .overlay-sub {
+    margin-top: 8px; font-size: 12px; color: #7a8290;
+  }
 
-  .hint {
-    position: fixed; bottom: 18px; left: 0; right: 0;
-    text-align: center; font-size: 12px; letter-spacing: 2px;
-    color: rgba(245,239,230,.35); z-index: 2;
+  /* 侧栏 */
+  .side { width: 196px; flex: none; }
+  .panel {
+    background: #fff;
+    border: 1px solid #e2e6eb;
+    border-radius: 3px;
+    margin-bottom: 10px;
+    overflow: hidden;
   }
+  .panel-head {
+    padding: 5px 10px;
+    font-size: 11.5px; color: #737c8a;
+    letter-spacing: .5px;
+    background: #f7f8fa;
+    border-bottom: 1px solid #e2e6eb;
+  }
+  .preview {
+    display: grid;
+    grid-template-columns: repeat(4, 18px);
+    grid-template-rows: repeat(4, 18px);
+    justify-content: center;
+    padding: 12px 0;
+  }
+  .pv-cell { border: 1px solid #e8eaed; background: #fff; }
+  .pv-cell.on { border-color: rgba(0,0,0,.12); }
+
+  .stats { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .stats th, .stats td { border: 1px solid #e8eaed; padding: 6px 9px; }
+  .stats th { background: #fafbfc; color: #7a8290; font-weight: 400; text-align: left; width: 50%; }
+  .stats td {
+    text-align: right; font-weight: 700;
+    font-family: Consolas, "Courier New", monospace;
+    color: #17a04e;
+  }
+
+  .keys { padding: 8px 10px 10px; font-size: 11.5px; color: #6b7280; line-height: 2; }
+  .keys kbd {
+    display: inline-block; min-width: 18px;
+    padding: 0 5px; margin-right: 2px;
+    font-family: inherit; font-size: 11px;
+    text-align: center; color: #3d4553;
+    background: #f2f4f7;
+    border: 1px solid #d8dce2;
+    border-bottom-width: 2px;
+    border-radius: 3px;
+  }
+
+  /* ---------- 状态栏 ---------- */
+  .statusbar {
+    height: 24px;
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 12px;
+    background: #f4f6f8;
+    border-top: 1px solid #e2e6eb;
+    font-size: 11.5px; color: #7a8290;
+  }
+  .statusbar .spacer { flex: 1; }
+  .statusbar b { color: #15803d; font-weight: 600; }
 </style>
 </head>
 <body>
 
-  <div class="stage">
-    <!-- 信封界面 -->
-    <div class="envelope" id="envelope">
-      <div class="icon">✉️</div>
-      <h1>冬日来信</h1>
-      <p>有一封来自冬天的信，等你拆开</p>
-      <button class="open-btn" id="openBtn">拆 开 信 封</button>
+<div class="app">
+  <!-- 标题栏 -->
+  <div class="titlebar">
+    <div class="left">
+      <div class="logo">W</div>
+      <span>俄罗斯方块.xlsx - WPS表格</span>
+    </div>
+    <div class="win-btns"><span>—</span><span>□</span><span>✕</span></div>
+  </div>
+
+  <!-- 选项卡 -->
+  <div class="tabs">
+    <div class="tab active">开始</div>
+    <div class="tab">插入</div>
+    <div class="tab">页面布局</div>
+    <div class="tab">公式</div>
+    <div class="tab">数据</div>
+    <div class="tab">审阅</div>
+    <div class="tab">视图</div>
+  </div>
+
+  <!-- 功能区 -->
+  <div class="ribbon">
+    <button class="btn primary" id="btnStart">▶ 开始游戏</button>
+    <button class="btn" id="btnPause">⏸ 暂停</button>
+    <button class="btn" id="btnReset">↺ 重置</button>
+    <div class="sep"></div>
+    <span class="hint">← → 移动 · ↑ 旋转 · ↓ 软降 · 空格 直落 · P 暂停</span>
+  </div>
+
+  <!-- 编辑栏 -->
+  <div class="formula-bar">
+    <div class="name-box" id="nameBox">A1</div>
+    <div class="fx">fx</div>
+    <div class="formula" id="formulaText">=TETRIS()　按「开始游戏」填充单元格</div>
+  </div>
+
+  <!-- 主体 -->
+  <div class="body">
+    <div class="sheet" id="sheet">
+      <div class="corner"></div>
+      <div class="col-heads" id="colHeads"></div>
+      <div class="row-heads" id="rowHeads"></div>
+      <div class="grid" id="grid"></div>
+      <div class="overlay" id="overlay">
+        <div>
+          <div class="overlay-title" id="overlayTitle">已暂停</div>
+          <div class="overlay-sub" id="overlaySub">按 P 继续</div>
+        </div>
+      </div>
     </div>
 
-    <!-- 信纸界面 -->
-    <div class="letter" id="letter">
-      <div class="top-line">❄ 冬 日 来 信 ❄</div>
-      <h2>致 冬 日 里 的 你</h2>
-      <p>风把最后一片叶子送回了街角，</p>
-      <p>我把想说的话折成一小片雪，</p>
-      <p>轻轻落在你的屏幕上。</p>
-      <p>愿你在这个冬天：</p>
-      <p>手边有热茶，心里有暖意，</p>
-      <p>打开这封信时，刚好想起一个温暖的人。</p>
-      <div class="sign">—— 来自：李翰儒</div>
+    <div class="side">
+      <div class="panel">
+        <div class="panel-head">下一个方块</div>
+        <div class="preview" id="preview"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">数据统计</div>
+        <table class="stats">
+          <tbody>
+            <tr><th>得分</th><td id="scoreEl">0</td></tr>
+            <tr><th>消行</th><td id="linesEl">0</td></tr>
+            <tr><th>等级</th><td id="levelEl">1</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">操作说明</div>
+        <div class="keys">
+          <div><kbd>←</kbd><kbd>→</kbd> 左右移动</div>
+          <div><kbd>↑</kbd> 旋转</div>
+          <div><kbd>↓</kbd> 软降 +1分</div>
+          <div><kbd>空格</kbd> 直落 +2分/格</div>
+          <div><kbd>P</kbd> 暂停 / 继续</div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="hint">轻触拆信 · 冬日限定</div>
+  <!-- 状态栏 -->
+  <div class="statusbar">
+    <span id="statusText">就绪</span>
+    <span class="spacer"></span>
+    <span>单元格: <b>10 × 18</b></span>
+    <span>100%</span>
+  </div>
+</div>
 
 <script>
-  // ====== 雪花 ======
-  (function makeSnow() {
-    const chars = ['❄', '❅', '❆', '·'];
-    const count = 26;
-    for (let i = 0; i < count; i++) {
-      const s = document.createElement('span');
-      s.className = 'snow';
-      s.textContent = chars[Math.floor(Math.random() * chars.length)];
-      s.style.left = Math.random() * 100 + 'vw';
-      s.style.fontSize = (8 + Math.random() * 14) + 'px';
-      s.style.animationDuration = (6 + Math.random() * 8) + 's';
-      s.style.animationDelay = (-Math.random() * 10) + 's';
-      document.body.appendChild(s);
-    }
-  })();
+(function () {
+  'use strict';
 
-  // ====== 拆信交互 ======
-  const envelope = document.getElementById('envelope');
-  const letter = document.getElementById('letter');
-  const openBtn = document.getElementById('openBtn');
-  const paragraphs = letter.querySelectorAll('p');
-  const sign = letter.querySelector('.sign');
+  /* ==================== 配置 ==================== */
+  const COLS = 10;      // 列数
+  const ROWS = 18;      // 行数
+  const CELL = 28;      // 单元格边长(px)
 
-  function openLetter() {
-    envelope.classList.add('hide');
-    setTimeout(() => {
-      letter.classList.add('show');
-      // 文字逐段出现
-      paragraphs.forEach((p, i) => {
-        setTimeout(() => p.classList.add('in'), 350 + i * 420);
-      });
-      setTimeout(() => sign.classList.add('in'), 350 + paragraphs.length * 420);
-    }, 500);
+  // Office 主题色，让方块看起来像「单元格填充色」
+  const COLORS = {
+    I: '#4472c4',
+    J: '#ed7d31',
+    L: '#ffc000',
+    O: '#70ad47',
+    S: '#7030a0',
+    T: '#5b9bd5',
+    Z: '#c00000'
+  };
+
+  // 全部使用 4×4 矩阵，内容统一从第 2 行开始，旋转和出生位置都更稳定
+  const SHAPES = {
+    I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+    J: [[0,0,0,0],[1,0,0,0],[1,1,1,0],[0,0,0,0]],
+    L: [[0,0,0,0],[0,0,1,0],[1,1,1,0],[0,0,0,0]],
+    O: [[0,0,0,0],[0,1,1,0],[0,1,1,0],[0,0,0,0]],
+    S: [[0,0,0,0],[0,1,1,0],[1,1,0,0],[0,0,0,0]],
+    T: [[0,0,0,0],[0,1,0,0],[1,1,1,0],[0,0,0,0]],
+    Z: [[0,0,0,0],[1,1,0,0],[0,1,1,0],[0,0,0,0]]
+  };
+
+  /* ==================== DOM ==================== */
+  const sheetEl    = document.getElementById('sheet');
+  const gridEl     = document.getElementById('grid');
+  const colHeadsEl = document.getElementById('colHeads');
+  const rowHeadsEl = document.getElementById('rowHeads');
+  const previewEl  = document.getElementById('preview');
+  const overlayEl  = document.getElementById('overlay');
+  const ovTitleEl  = document.getElementById('overlayTitle');
+  const ovSubEl    = document.getElementById('overlaySub');
+  const nameBoxEl  = document.getElementById('nameBox');
+  const formulaEl  = document.getElementById('formulaText');
+  const scoreEl    = document.getElementById('scoreEl');
+  const linesEl    = document.getElementById('linesEl');
+  const levelEl    = document.getElementById('levelEl');
+  const statusEl   = document.getElementById('statusText');
+  const btnStart   = document.getElementById('btnStart');
+  const btnPause   = document.getElementById('btnPause');
+  const btnReset   = document.getElementById('btnReset');
+
+  /* ==================== 构建表格 ==================== */
+  sheetEl.style.gridTemplateColumns = `32px ${COLS * CELL}px`;
+  sheetEl.style.gridTemplateRows    = `24px ${ROWS * CELL}px`;
+  gridEl.style.gridTemplateColumns  = `repeat(${COLS}, ${CELL}px)`;
+  gridEl.style.gridTemplateRows     = `repeat(${ROWS}, ${CELL}px)`;
+  colHeadsEl.style.width  = `${COLS * CELL}px`;
+  rowHeadsEl.style.height = `${ROWS * CELL}px`;
+
+  // 列标 A B C ...
+  for (let x = 0; x < COLS; x++) {
+    const d = document.createElement('div');
+    d.style.width = CELL + 'px';
+    d.textContent = String.fromCharCode(65 + x);
+    colHeadsEl.appendChild(d);
+  }
+  // 行号 1 2 3 ...
+  for (let y = 1; y <= ROWS; y++) {
+    const d = document.createElement('div');
+    d.style.height = CELL + 'px';
+    d.textContent = y;
+    rowHeadsEl.appendChild(d);
+  }
+  // 游戏网格
+  const cells = [];
+  for (let i = 0; i < COLS * ROWS; i++) {
+    const d = document.createElement('div');
+    d.className = 'cell';
+    d._painted = false;
+    gridEl.appendChild(d);
+    cells.push(d);
+  }
+  // 预览网格
+  const pvCells = [];
+  for (let i = 0; i < 16; i++) {
+    const d = document.createElement('div');
+    d.className = 'pv-cell';
+    previewEl.appendChild(d);
+    pvCells.push(d);
   }
 
-  openBtn.addEventListener('click', openLetter);
+  /* ==================== 游戏状态 ==================== */
+  let board       = [];
+  let cur         = null;
+  let nextType    = null;
+  let bag         = [];
+  let score       = 0;
+  let lines       = 0;
+  let level       = 1;
+  let state       = 'ready';   // ready | playing | paused | clearing | over
+  let dropInterval = 820;
+  let dropCounter  = 0;
+  let lastTime     = performance.now();
 
-  // 可选：整张信封也可以点
-  envelope.addEventListener('click', (e) => {
-    if (e.target === openBtn) return;
-    openLetter();
+  const SCORE_TABLE = [0, 100, 300, 500, 800];
+
+  /* ==================== 工具函数 ==================== */
+  function emptyBoard() {
+    return Array.from({ length: ROWS }, () => new Array(COLS).fill(null));
+  }
+
+  function nextFromBag() {
+    if (!bag.length) {
+      bag = Object.keys(SHAPES);
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+    }
+    return bag.pop();
+  }
+
+  function makePiece(type) {
+    return {
+      type,
+      mat: SHAPES[type].map(r => r.slice()),
+      color: COLORS[type],
+      x: Math.floor((COLS - 4) / 2),
+      y: -1
+    };
+  }
+
+  function collide(mat, ox, oy) {
+    for (let y = 0; y < 4; y++) {
+      for (let x = 0; x < 4; x++) {
+        if (!mat[y][x]) continue;
+        const bx = ox + x;
+        const by = oy + y;
+        if (bx < 0 || bx >= COLS || by >= ROWS) return true;
+        if (by >= 0 && board[by][bx]) return true;
+      }
+    }
+    return false;
+  }
+
+  function rotateMatrix(m) {
+    const out = Array.from({ length: 4 }, () => new Array(4).fill(0));
+    for (let y = 0; y < 4; y++)
+      for (let x = 0; x < 4; x++)
+        out[x][3 - y] = m[y][x];
+    return out;
+  }
+
+  /* ==================== 渲染 ==================== */
+  function paint(x, y, color) {
+    if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return;
+    const c = cells[y * COLS + x];
+    c.style.background = color;
+    c.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,.38), inset 0 -3px 0 rgba(0,0,0,.14)';
+    c._painted = true;
+  }
+
+  function render() {
+    // 清空上一帧
+    for (let i = 0; i < cells.length; i++) {
+      const c = cells[i];
+      if (c._painted) {
+        c.style.background = '';
+        c.style.boxShadow = '';
+        c._painted = false;
+      }
+    }
+    // 已固定的方块
+    for (let y = 0; y < ROWS; y++)
+      for (let x = 0; x < COLS; x++)
+        if (board[y][x]) paint(x, y, board[y][x]);
+
+    if (!cur) return;
+
+    // 幽灵落点（浅色提示）
+    let gy = cur.y;
+    while (!collide(cur.mat, cur.x, gy + 1)) gy++;
+
+    for (let y = 0; y < 4; y++) {
+      for (let x = 0; x < 4; x++) {
+        if (!cur.mat[y][x]) continue;
+        const bx = cur.x + x;
+        const by = gy + y;
+        if (by >= 0 && by < ROWS && bx >= 0 && bx < COLS) {
+          const c = cells[by * COLS + bx];
+          c.style.background = cur.color + '1f';
+          c.style.boxShadow = `inset 0 0 0 1px ${cur.color}66`;
+          c._painted = true;
+        }
+      }
+    }
+
+    // 当前方块
+    for (let y = 0; y < 4; y++)
+      for (let x = 0; x < 4; x++)
+        if (cur.mat[y][x]) paint(cur.x + x, cur.y + y, cur.color);
+  }
+
+  function updatePreview() {
+    const mat = SHAPES[nextType] || SHAPES.T;
+    const color = COLORS[nextType] || '#ccc';
+    for (let i = 0; i < 16; i++) {
+      const y = Math.floor(i / 4), x = i % 4;
+      const c = pvCells[i];
+      if (mat[y][x]) {
+        c.style.background = color;
+        c.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,.4), inset 0 -2px 0 rgba(0,0,0,.15)';
+        c.classList.add('on');
+      } else {
+        c.style.background = '';
+        c.style.boxShadow = '';
+        c.classList.remove('on');
+      }
+    }
+  }
+
+  function updateStats() {
+    scoreEl.textContent = score;
+    linesEl.textContent = lines;
+    levelEl.textContent = level;
+  }
+
+  function updateNameBox() {
+    if (cur) {
+      const col = String.fromCharCode(65 + Math.max(0, Math.min(COLS - 1, cur.x)));
+      nameBoxEl.textContent = col + Math.max(1, cur.y + 1);
+    } else {
+      nameBoxEl.textContent = 'A1';
+    }
+  }
+
+  function setStatus(text) { statusEl.textContent = text; }
+  function setFormula(text) { formulaEl.textContent = text; }
+
+  /* ==================== 方块生成 ==================== */
+  function spawnNext() {
+    const type = nextType || nextFromBag();
+    nextType = nextFromBag();
+    cur = makePiece(type);
+    updatePreview();
+    const ok = !collide(cur.mat, cur.x, cur.y);
+    render();
+    updateNameBox();
+    return ok;
+  }
+
+  /* ==================== 操作 ==================== */
+  function move(dx) {
+    if (!cur || state !== 'playing') return;
+    if (!collide(cur.mat, cur.x + dx, cur.y)) {
+      cur.x += dx;
+      render();
+      updateNameBox();
+    }
+  }
+
+  function rotatePiece() {
+    if (!cur || state !== 'playing') return;
+    const rotated = rotateMatrix(cur.mat);
+    for (const kick of [0, -1, 1, -2, 2]) {
+      if (!collide(rotated, cur.x + kick, cur.y)) {
+        cur.mat = rotated;
+        cur.x += kick;
+        render();
+        updateNameBox();
+        return;
+      }
+    }
+  }
+
+  function softDrop() {
+    if (!cur || state !== 'playing') return;
+    if (!collide(cur.mat, cur.x, cur.y + 1)) {
+      cur.y++;
+      score += 1;
+      updateStats();
+      render();
+      updateNameBox();
+    } else {
+      lock();
+    }
+    dropCounter = 0;
+  }
+
+  function hardDrop() {
+    if (!cur || state !== 'playing') return;
+    while (!collide(cur.mat, cur.x, cur.y + 1)) {
+      cur.y++;
+      score += 2;
+    }
+    updateStats();
+    lock();
+    dropCounter = 0;
+  }
+
+  function step() {
+    if (!cur) return;
+    if (collide(cur.mat, cur.x, cur.y + 1)) {
+      lock();
+      return;
+    }
+    cur.y++;
+    render();
+    updateNameBox();
+  }
+
+  /* ==================== 锁定 & 消行 ==================== */
+  function lock() {
+    let topOut = false;
+
+    for (let y = 0; y < 4; y++) {
+      for (let x = 0; x < 4; x++) {
+        if (!cur.mat[y][x]) continue;
+        const by = cur.y + y, bx = cur.x + x;
+        if (by < 0) { topOut = true; continue; }
+        board[by][bx] = cur.color;
+      }
+    }
+    cur = null;
+
+    if (topOut) { render(); gameOver(); return; }
+
+    // 找出满行
+    const full = [];
+    for (let y = 0; y < ROWS; y++) {
+      if (board[y].every(v => v)) full.push(y);
+    }
+
+    if (!full.length) {
+      if (!spawnNext()) gameOver();
+      return;
+    }
+
+    /* --- 消行动画 --- */
+    state = 'clearing';
+    for (const y of full) {
+      for (let x = 0; x < COLS; x++) cells[y * COLS + x].classList.add('clearing');
+    }
+
+    score += SCORE_TABLE[full.length] * level;
+    lines += full.length;
+    const newLevel = Math.floor(lines / 10) + 1;
+    const levelUp = newLevel > level;
+    level = newLevel;
+    dropInterval = Math.max(110, 820 - (level - 1) * 70);
+    updateStats();
+    setFormula(`=SUM(消除 ${full.length} 行 × ${level} 级)　得分 +${SCORE_TABLE[full.length] * level}`);
+
+    setTimeout(() => {
+      for (const c of cells) c.classList.remove('clearing');
+
+      const survivors = board.filter((_, y) => !full.includes(y));
+      while (survivors.length < ROWS) survivors.unshift(new Array(COLS).fill(null));
+      board = survivors;
+
+      state = 'playing';
+      dropCounter = 0;
+
+      if (levelUp) setFormula(`=升级(${level})　下落速度提升！`);
+      else setFormula('=TETRIS()　游戏进行中…');
+
+      if (!spawnNext()) gameOver();
+    }, 200);
+  }
+
+  /* ==================== 流程控制 ==================== */
+  function startGame() {
+    board = emptyBoard();
+    bag = [];
+    nextType = null;
+    score = 0;
+    lines = 0;
+    level = 1;
+    dropInterval = 820;
+    dropCounter = 0;
+    state = 'playing';
+
+    overlayEl.classList.remove('show');
+    updateStats();
+    setStatus('游戏进行中');
+    setFormula('=TETRIS()　游戏进行中…');
+    btnPause.textContent = '⏸ 暂停';
+    btnPause.disabled = false;
+
+    if (!spawnNext()) gameOver();
+    lastTime = performance.now();
+  }
+
+  function togglePause() {
+    if (state === 'playing') {
+      state = 'paused';
+      ovTitleEl.textContent = '已暂停';
+      ovSubEl.textContent = '按 P 或点击「暂停」继续';
+      overlayEl.classList.add('show');
+      setStatus('已暂停');
+      setFormula('=PAUSE()　游戏已暂停');
+      btnPause.textContent = '▶ 继续';
+    } else if (state === 'paused') {
+      state = 'playing';
+      overlayEl.classList.remove('show');
+      setStatus('游戏进行中');
+      setFormula('=TETRIS()　游戏进行中…');
+      btnPause.textContent = '⏸ 暂停';
+      lastTime = performance.now();
+    }
+  }
+
+  function gameOver() {
+    state = 'over';
+    cur = null;
+    ovTitleEl.textContent = '游戏结束';
+    ovSubEl.textContent = `最终得分 ${score}　消除 ${lines} 行`;
+    overlayEl.classList.add('show');
+    setStatus('游戏结束');
+    setFormula(`=GAMEOVER(${score})　点击「开始游戏」再来一局`);
+    btnPause.disabled = true;
+    updateNameBox();
+  }
+
+  function resetGame() {
+    state = 'ready';
+    board = emptyBoard();
+    cur = null;
+    nextType = null;
+    bag = [];
+    score = 0;
+    lines = 0;
+    level = 1;
+    dropInterval = 820;
+    dropCounter = 0;
+
+    overlayEl.classList.remove('show');
+    for (const c of cells) c.classList.remove('clearing');
+    for (const c of pvCells) {
+      c.style.background = '';
+      c.style.boxShadow = '';
+      c.classList.remove('on');
+    }
+
+    render();
+    updateStats();
+    updateNameBox();
+    setStatus('就绪');
+    setFormula('=TETRIS()　按「开始游戏」填充单元格');
+    btnPause.textContent = '⏸ 暂停';
+    btnPause.disabled = true;
+  }
+
+  /* ==================== 主循环 ==================== */
+  function loop(time) {
+    requestAnimationFrame(loop);
+
+    const dt = time - lastTime;
+    lastTime = time;
+
+    if (state !== 'playing') return;
+
+    dropCounter += dt;
+    if (dropCounter >= dropInterval) {
+      dropCounter = 0;
+      step();
+    }
+  }
+
+  /* ==================== 事件 ==================== */
+  document.addEventListener('keydown', function (e) {
+    const k = e.key;
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(k)) {
+      e.preventDefault();
+    }
+
+    if (k === 'p' || k === 'P') { togglePause(); return; }
+    if (state !== 'playing') return;
+
+    switch (k) {
+      case 'ArrowLeft':  move(-1); break;
+      case 'ArrowRight': move(1);  break;
+      case 'ArrowUp':    rotatePiece(); break;
+      case 'ArrowDown':  softDrop(); break;
+      case ' ':          hardDrop(); break;
+    }
   });
+
+  btnStart.addEventListener('click', startGame);
+  btnPause.addEventListener('click', togglePause);
+  btnReset.addEventListener('click', resetGame);
+
+  // 触屏 / 鼠标滑动（简单支持）
+  let touchStartX = 0, touchStartY = 0, touchMoved = false;
+  gridEl.addEventListener('touchstart', function (e) {
+    const t = e.changedTouches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchMoved = false;
+  }, { passive: true });
+
+  gridEl.addEventListener('touchend', function (e) {
+    if (state !== 'playing' || !cur) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+
+    if (Math.abs(dx) < 24 && Math.abs(dy) < 24) {
+      rotatePiece();
+      return;
+    }
+    if (Math.abs(dx) > Math.abs(dy)) {
+      move(dx > 0 ? 1 : -1);
+    } else if (dy > 50) {
+      hardDrop();
+    }
+  }, { passive: true });
+
+  /* ==================== 初始化 ==================== */
+  board = emptyBoard();
+  render();
+  updateStats();
+  btnPause.disabled = true;
+  requestAnimationFrame(loop);
+
+})();
 </script>
 </body>
 </html>
